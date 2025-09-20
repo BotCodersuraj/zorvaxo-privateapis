@@ -1,8 +1,14 @@
-// pages/api/generate.js
 export default function handler(req, res) {
-  // GET request use karo instead of POST
+  // Secret key check
+  const secret = req.query.secret;
+
+  if (secret !== "ZORVAXO_API_GENRATOR") {
+    return res.status(403).json({ success: false, message: "❌ Unauthorized" });
+  }
+
   if (req.method === "GET") {
     const newKey = Math.random().toString(36).substring(2, 12);
+
     res.status(200).json({
       success: true,
       apiKey: newKey,
