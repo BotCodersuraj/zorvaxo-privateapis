@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bullet Storm - Official Website</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { background-color: #111; color: white; font-family: sans-serif; }
+  .btn { @apply bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition; }
+  canvas { background: #222; display: block; margin: auto; border: 2px solid #fff; }
+</style>
+</head>
+<body class="overflow-x-hidden">
+
+<!-- Hero Section -->
+<section class="h-screen flex flex-col justify-center items-center bg-[url('https://i.ibb.co/1mzqBzt/bg-game.jpg')] bg-cover bg-center">
+  <h1 class="text-6xl font-bold mb-6 drop-shadow-lg">Bullet Storm</h1>
+  <p class="text-xl mb-8 drop-shadow-md">2D Action Shooting Game</p>
+  <button class="btn" onclick="scrollToGame()">Play Now</button>
+</section>
+
+<!-- About Game -->
+<section class="py-16 px-8 text-center bg-gray-900">
+  <h2 class="text-4xl font-bold mb-4">About Bullet Storm</h2>
+  <p class="max-w-2xl mx-auto text-lg mb-6">
+    Bullet Storm is an addictive 2D shooting game. Move with arrow keys and shoot with spacebar. Dodge enemies, collect power-ups and survive as long as you can!
+  </p>
+  <ul class="list-disc list-inside text-left max-w-md mx-auto space-y-2">
+    <li>Top-down 2D shooter</li>
+    <li>Multiple enemy types & levels</li>
+    <li>Power-ups and achievements</li>
+    <li>Leaderboard to challenge friends</li>
+  </ul>
+</section>
+
+<!-- Screenshots / Carousel -->
+<section class="py-16 px-8 text-center">
+  <h2 class="text-4xl font-bold mb-8">Screenshots</h2>
+  <div class="flex overflow-x-scroll space-x-4">
+    <img src="https://i.ibb.co/7WZqfY9/screen1.png" class="w-80 rounded-lg shadow-lg" />
+    <img src="https://i.ibb.co/6wzLrNq/screen2.png" class="w-80 rounded-lg shadow-lg" />
+    <img src="https://i.ibb.co/4N7Q2Lf/screen3.png" class="w-80 rounded-lg shadow-lg" />
+  </div>
+</section>
+
+<!-- Play Game -->
+<section id="gameSection" class="py-16 px-8 text-center bg-gray-900">
+  <h2 class="text-4xl font-bold mb-4">Play Bullet Storm</h2>
+  <p class="mb-6">Arrow keys to move, Space to shoot</p>
+  <canvas id="gameCanvas" width="600" height="400"></canvas>
+  <div class="mt-4">
+    <button class="btn" onclick="resetGame()">Restart Game</button>
+  </div>
+  <p class="mt-4" id="scoreDisplay">Score: 0</p>
+</section>
+
+<!-- Share Buttons -->
+<section class="py-16 px-8 text-center">
+  <h2 class="text-4xl font-bold mb-6">Share Your Score</h2>
+  <div class="flex justify-center space-x-4">
+    <button class="btn" onclick="shareScore('whatsapp')">WhatsApp</button>
+    <button class="btn" onclick="shareScore('telegram')">Telegram</button>
+    <button class="btn" onclick="shareScore('copy')">Copy Link</button>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="py-8 bg-gray-800 text-center">
+  <p>© 2025 Bullet Storm | Developed by Suraj bhai</p>
+</footer>
+
+<script>
+// Scroll to game
+function scrollToGame() {
+  document.getElementById('gameSection').scrollIntoView({behavior: 'smooth'});
+}
+
+// Share Score
+function shareScore(platform) {
+  const score = localStorage.getItem('bulletStormScore') || 0;
+  const text = `I scored ${score} points in Bullet Storm! Can you beat me? 🚀`;
+  if(platform === 'whatsapp') window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
+  else if(platform === 'telegram') window.open(`https://t.me/share/url?url=&text=${encodeURIComponent(text)}`);
+  else navigator.clipboard.writeText(text).then(()=>alert('Score copied to clipboard!'));
+}
+
+/* ======== GAME LOGIC ======== */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+let player = { x: 280, y: 350, w: 40, h: 40, speed: 5 };
+let bullets = [];
+let enemies = [];
+let keys = {};
+let score = 0;
+let enemyInterval;
+
+document.addEventListener('keydown', e => keys[e.code] = true);
+document.addEventListener('keyup', e => keys[e.code] = false);
+
+function shoot() {
+  bullets.push({ x: player.x + player.w/2 -5, y: player.y, w:10, h:20, speed:7 });
+}
+
+// Spawn enemies
+function spawnEnemy() {
+  const x = Math.random()*(canvas.width-30);
+  enemies.push({ x:x, y:-30, w:30, h:30, speed:2 });
+}
+
+function isColliding(a,b){
+  return !(a.x + a.w < b.x || a.x > b.x + b.w || a.y + a.h < b.y || a.y > b.y + b.h);
+}
+
+function updateGame() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // Player move
+  if(keys['ArrowLeft'] && player.x>0) player.x -= player.speed;
+  if(keys['ArrowRight'] && player.x<canvas.width-player.w) player.x += player.speed;
+  if(keys['ArrowUp'] && player.y>0) player.y -= player.speed;
+  if(keys['ArrowDown'] && player.y<canvas.height-player.h) player.y += player.speed;
+  if(keys['Space']) shoot();
+
+  // Draw player
+  ctx.fillStyle='lime';
+  ctx.fillRect(player.x, player.y, player.w, player.h);
+
+  // Bullets
+  for(let i=bullets.length-1;i>=0;i--){
+    bullets[i].y -= bullets[i].speed;
+    ctx.fillStyle='yellow';
+    ctx.fillRect(bullets[i].x, bullets[i].y, bullets[i].w, bullets[i].h);
+    if(bullets[i].y<0) bullets.splice(i,1);
+  }
+
+  // Enemies
+  for(let i=enemies.length-1;i>=0;i--){
+    enemies[i].y += enemies[i].speed;
+    ctx.fillStyle='red';
+    ctx.fillRect(enemies[i].x, enemies[i].y, enemies[i].w, enemies[i].h);
+
+    for(let j=bullets.length-1;j>=0;j--){
+      if(isColliding(bullets[j], enemies[i])){
+        bullets.splice(j,1);
+        enemies.splice(i,1);
+        score+=10;
+        localStorage.setItem('bulletStormScore', score);
+        document.getElementById('scoreDisplay').innerText = 'Score: '+score;
+        break;
+      }
+    }
+
+    if(isColliding(player,enemies[i])){
+      alert('Game Over! Score: '+score);
+      resetGame();
+      return;
+    }
+
+    if(enemies[i] && enemies[i].y>canvas.height) enemies.splice(i,1);
+  }
+
+  requestAnimationFrame(updateGame);
+}
+
+function resetGame() {
+  player = { x:280, y:350, w:40, h:40, speed:5 };
+  bullets = [];
+  enemies = [];
+  score = 0;
+  document.getElementById('scoreDisplay').innerText = 'Score: 0';
+  clearInterval(enemyInterval);
+  enemyInterval = setInterval(spawnEnemy,1500);
+}
+
+// Start game
+resetGame();
+updateGame();
+</script>
+
+</body>
+</html>
