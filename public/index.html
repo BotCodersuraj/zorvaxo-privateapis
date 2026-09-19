@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width,initial-scale=1">
+
+<title>Remote Browser</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #090b10;
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+.top {
+    padding: 12px;
+    background: #11151d;
+    display: flex;
+    gap: 8px;
+}
+
+input {
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #303744;
+    background: #080a0f;
+    color: white;
+}
+
+button {
+    padding: 11px 15px;
+    border: 0;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.browser {
+    padding: 12px;
+}
+
+iframe {
+    width: 100%;
+    height: calc(100vh - 90px);
+    border: 1px solid #292f3b;
+    border-radius: 12px;
+    background: white;
+}
+</style>
+</head>
+
+<body>
+
+<div class="top">
+
+<input
+    id="url"
+    value="https://example.com"
+    placeholder="https://example.com"
+>
+
+<button onclick="go()">GO</button>
+
+<button onclick="back()">←</button>
+
+<button onclick="forward()">→</button>
+
+</div>
+
+<div class="browser">
+
+<iframe
+    id="screen"
+    sandbox="allow-forms allow-scripts allow-same-origin allow-popups">
+</iframe>
+
+</div>
+
+<script>
+
+const id =
+    location.pathname.split("/").pop();
+
+const socket =
+    new WebSocket(
+        `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws/${id}`
+    );
+
+const frame =
+    document.getElementById("screen");
+
+socket.onmessage = event => {
+
+    const data =
+        JSON.parse(event.data);
+
+    if (data.type === "navigation") {
+
+        document.getElementById("url").value =
+            data.url;
+
+        /*
+         * A normal iframe cannot display the
+         * remote Chromium screen itself.
+         *
+         * This starter UI therefore shows the
+         * current URL. Full live screen streaming
+         * requires CDP/VNC/WebRTC integration.
+         */
+    }
+};
+
+function go() {
+
+    const value =
+        document.getElementById("url").value.trim();
+
+    socket.send(JSON.stringify({
+        type: "navigate",
+        url: value
+    }));
+}
+
+function back() {
+
+    socket.send(JSON.stringify({
+        type: "back"
+    }));
+}
+
+function forward() {
+
+    socket.send(JSON.stringify({
+        type: "forward"
+    }));
+}
+
+</script>
+
+</body>
+</html>
